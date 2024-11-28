@@ -1,24 +1,21 @@
-# fimbot
-A Telegram bot for managing cryptocurrency payments and transactions with integrated features like automatic email alerts and payment verification.
+# FIM Crypto Exchange Bot
+
+This is a Telegram bot for cryptocurrency transactions and management, built using Python and the Telegram Bot API.
 
 ## Features
-- User registration: Name, WhatsApp, Gmail, and wallet address
-- Cryptocurrency selection and plan selection
-- Custom payment amount support
-- Payment screenshot upload for verification
-- Email notifications for successful transactions
+- Accepts user details like name, WhatsApp number, email, and wallet address.
+- Supports cryptocurrency selection and plan customization.
+- Sends transaction details via email using Mailgun.
+- Provides detailed feedback and logs for users.
 
-## Technologies Used
-- Python
-- Telegram Bot API
-- pytesseract (OCR for processing payment screenshots)
-- aiohttp (Asynchronous HTTP client for sending emails)
-- Mailgun (for email notifications)
-- PIL (Python Imaging Library for image processing)
+## Prerequisites
+- Python 3.9+
+- Telegram Bot Token (get it from [BotFather](https://core.telegram.org/bots#botfather))
+- Mailgun API credentials
+- Render account for deployment
 
 ## Installation
-
-1. Clone this repository:
+1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/fim-market-bot.git
-
+   git clone https://github.com/<your-username>/<your-repo>.git
+   cd <your-repo>
