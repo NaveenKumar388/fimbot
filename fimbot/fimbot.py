@@ -23,7 +23,7 @@ app = Flask(__name__)
 
 # Your bot token from BotFather
 BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
-WEBHOOK_URL = "https://fimbot.onrender.com/webhook"  # Replace with your server's webhook URL
+WEBHOOK_URL = "https://api.telegram.org/bot7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw/setWebhook"  # Replace with your server's webhook URL
 
 application = Application.builder().token(BOT_TOKEN).build()
 
