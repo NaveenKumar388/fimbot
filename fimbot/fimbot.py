@@ -27,7 +27,7 @@ OWNER_UPI_ID = "kspgpraveen157@ybl"
 
 # Async function to send email using Mailgun
 async def send_email(details: str):
-    API_KEY = "f0ba9eea684836864cae3256414c0b3f-c02fd0ba-481e7eb0"
+    API_KEY = "c40b4cf176d8b7848047f78af43181d2-c02fd0ba-2d74e556"
     DOMAIN = "sandbox9e42961865ff435daea67c7af5b358eb.mailgun.org"
     sender_email = "bot@yourdomain.com"
     recipient_email = "fimcryptobot@gmail.com"
@@ -101,19 +101,31 @@ async def validate_gmail(update: Update, context: CallbackContext) -> int:
 # Step 5: Choose Cryptocurrency
 async def choose_crypto(update: Update, context: CallbackContext) -> int:
     context.user_data['crypto'] = update.message.text
-    await update.message.reply_text(
-        "Now, choose a plan by entering the number (1-8):\n"
-        "1. 0.5$ - 55₹\n"
-        "2. 1$ - 97₹\n"
-        "3. 2$ - 194₹\n"
-        "4. 3$ - 291₹\n"
-        "5. 4$ - 388₹\n"
-        "6. 5$ - 485₹\n"
-        "7. 7$ - 680₹\n"
-        "8. Others (Enter your amount in dollars):",
-        reply_markup=ReplyKeyboardRemove(),
-    )
+    if context.user_data['crypto'] == "USDT":
+        plan_description = (
+            "Now, choose a plan by entering the number (1-8):\n"
+            "1. 1$ - 92₹\n"
+            "2. 2$ - 184₹\n"
+            "3. 3$ - 276₹\n"
+            "4. 4$ - 368₹\n"
+            "5. 5$ - 458₹\n"
+            "8. Others (Enter your amount in dollars):"
+        )
+    else:
+        plan_description = (
+            "Now, choose a plan by entering the number (1-8):\n"
+            "1. 0.5$ - 55₹\n"
+            "2. 1$ - 97₹\n"
+            "3. 2$ - 194₹\n"
+            "4. 3$ - 291₹\n"
+            "5. 4$ - 388₹\n"
+            "6. 5$ - 485₹\n"
+            "7. 7$ - 680₹\n"
+            "8. Others (Enter your amount in dollars):"
+        )
+    await update.message.reply_text(plan_description, reply_markup=ReplyKeyboardRemove())
     return SELECT_PLAN
+
 
 # ... (previous code remains unchanged)
 
@@ -126,27 +138,39 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
             "1": 92, "2": 184, "3": 276, "4": 368, "5": 458, "8": None
         }
         plans = usdt_plans
+        plan_description = (
+            "Now, choose a plan by entering the number (1-8):\n"
+            "1. 1$ - 92₹\n"
+            "2. 2$ - 184₹\n"
+            "3. 3$ - 276₹\n"
+            "4. 4$ - 368₹\n"
+            "5. 5$ - 458₹\n"
+            "8. Others (Enter your amount in dollars):"
+        )
     else:
         plans = {
             "1": 55, "2": 97, "3": 194, "4": 291, "5": 388, "6": 485, "7": 680, "8": None
         }
+        plan_description = (
+            "Now, choose a plan by entering the number (1-8):\n"
+            "1. 0.5$ - 55₹\n"
+            "2. 1$ - 97₹\n"
+            "3. 2$ - 194₹\n"
+            "4. 3$ - 291₹\n"
+            "5. 4$ - 388₹\n"
+            "6. 5$ - 485₹\n"
+            "7. 7$ - 680₹\n"
+            "8. Others (Enter your amount in dollars):"
+        )
 
     if text in plans and text != "8":
-        if context.user_data['crypto'] == "USDT" and text in ["1", "2", "3", "4", "5"]:
-            context.user_data['amount'] = plans[text]
-            await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
-            return WALLET
-        elif context.user_data['crypto'] != "USDT" and text in ["1", "2", "3", "4", "5"]:
-            context.user_data['amount'] = plans[text]
-            await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
-            return WALLET
-    
-    if text == "8":
-        if context.user_data['crypto'] == "USDT":
-            await update.message.reply_text("Enter your amount in dollars (Minimum 5 USD):")
-        else:
-            await update.message.reply_text("Enter your amount in dollars:")
+        context.user_data['amount'] = plans[text]
+        await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
+        return WALLET
+    elif text == "8":
+        await update.message.reply_text("Enter your amount in dollars:")
         return SELECT_PLAN
+    
 
     try:
         amount = float(text)
@@ -167,10 +191,6 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
     except ValueError:
         await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
         return SELECT_PLAN
-
-# ... (rest of the code remains unchanged)
-
-
 
 # Step 7: Wallet Address
 async def wallet(update: Update, context: CallbackContext) -> int:
