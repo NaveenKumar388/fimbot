@@ -15,12 +15,6 @@ from telegram import Bot
 
 
 
-# Your bot token from BotFather
-BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
-
-
-application = Application.builder().token(BOT_TOKEN).build()
-
 # Set up logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -256,6 +250,8 @@ async def final(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("THANK YOU!!! , VISIT AGAIN...")
     return ConversationHandler.END
 
+
+    
 #conversation handler
 conversation_handler = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
@@ -278,6 +274,18 @@ conversation_handler = ConversationHandler(
 
 application.add_handler(conversation_handler)
 
+# Your bot token from BotFather
+BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
+
+application = Application.builder().token(BOT_TOKEN).build()
+bot.set_webhook(url='https://https://fimbot.onrender.com/your-webhook-path')
+set_webhook_url = f"https://api.telegram.org/bot{bot_token}/setWebhook?url={webhook_url}"
+response = requests.get(set_webhook_url)
+
+if response.status_code == 200:
+    print("Webhook set successfully!")
+else:
+    print(f"Failed to set webhook: {response.text}")
 
 
 if __name__ == "__main__":
