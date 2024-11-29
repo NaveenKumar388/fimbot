@@ -122,8 +122,7 @@ async def choose_crypto(update: Update, context: CallbackContext) -> int:
     return SELECT_PLAN
 
 
-
-# Step 6: Choose Plan or Enter Amount (for USDT)
+#Step 6: Choose Plan or Enter Amount (for USDT)
 async def choose_plan(update: Update, context: CallbackContext) -> int:
     text = update.message.text
 
@@ -135,7 +134,6 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
             "3": "276₹ (3 USDT)",
             "4": "368₹ (4 USDT)",
             "5": "458₹ (5 USDT)",
-            
         }
 
         if text in usdt_plans:  # If the user selects a predefined USDT plan
@@ -152,26 +150,6 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
             logger.warning(f"Invalid plan selection for USDT: {text}")
             await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
             return SELECT_PLAN
-        async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
-            amount = update.message.text
-            try:
-                # Check if the input is a valid number and greater than or equal to 5
-                amount = float(amount)
-                if amount >= 5:
-                    context.user_data['amount'] = f"{amount} USD"
-                    logger.info(f"Custom amount selected: {amount} USD")
-                    await update.message.reply_text(f"Custom amount selected: {amount} USD\nNow, enter your wallet address:")
-                    return WALLET
-                else:
-                    await update.message.reply_text("Amount should be at least 5 USD. Please enter a valid amount.")
-                    return SELECT_PLAN
-            except ValueError:
-                await update.message.reply_text("Invalid amount. Please enter a numeric value.")
-                return SELECT_PLAN
-
-            
-    
-    
 
     else:
         # Handle non-USDT plans (same as before)
@@ -199,6 +177,32 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
             logger.warning(f"Invalid plan selection: {text}")
             await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
             return SELECT_PLAN
+
+
+# Step 6.1: Handle Custom Amount (only for USDT and plan 8)
+async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
+    # Ensure this only runs if the selected crypto is USDT and the plan is 8
+    if context.user_data.get('crypto') == "USDT" and context.user_data.get('amount') == "8":
+        amount = update.message.text
+        try:
+            # Check if the input is a valid number and greater than or equal to 5
+            amount = float(amount)
+            if amount >= 5:
+                context.user_data['amount'] = f"{amount} USD"
+                logger.info(f"Custom amount selected: {amount} USD")
+                await update.message.reply_text(f"Custom amount selected: {amount} USD\nNow, enter your wallet address:")
+                return WALLET
+            else:
+                await update.message.reply_text("Amount should be at least 5 USD. Please enter a valid amount.")
+                return SELECT_PLAN
+        except ValueError:
+            await update.message.reply_text("Invalid amount. Please enter a numeric value.")
+            return SELECT_PLAN
+    else:
+        # If it's not USDT or plan 8, just proceed to the next step without handling custom amount
+        await update.message.reply_text("Please select a valid plan or try again.")
+        return SELECT_PLAN
+
         
 
 
@@ -260,19 +264,20 @@ def main():
     application = Application.builder().token('7556988669:AAEAswtPq7xG4Z5zhB78_FBgmqKDRKvg990').build()
 
     conversation_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-        states={
-            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
-            WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
-            GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
-            CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
-            SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
-            WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
-            GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
-            PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
-        },
-        fallbacks=[CommandHandler('cancel', cancel)],
-    )
+    entry_points=[CommandHandler('start', start)],
+    states={
+        NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
+        WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
+        GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
+        CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
+        SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
+        WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
+        GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
+        PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
+    },
+    fallbacks=[CommandHandler('cancel', cancel)],
+   )
+  
 
     application.add_handler(conversation_handler)
     application.run_polling()
