@@ -266,7 +266,7 @@ def main():
             WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
             GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
             CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
-            SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan,handle_custom_amount)],
+            SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
             WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
             GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
             PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
