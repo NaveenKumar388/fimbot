@@ -1,19 +1,16 @@
-import logging 
+import logging
 import re
-from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove 
+from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
-    filters,  
+    filters,
     ConversationHandler,
     CallbackContext
 )
 import aiohttp
 from aiohttp import BasicAuth
-from telegram import Bot
-
-
 
 # Set up logging
 logging.basicConfig(
@@ -23,7 +20,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Define states
-NAME, WHATSAPP, GMAIL, CHOOSE_CRYPTO, SELECT_PLAN, WALLET, GETUPI, PAYMENT_CONFIRMATION  , USERDETAILS , FINAL =  range(10)
+NAME, WHATSAPP, GMAIL, CHOOSE_CRYPTO, SELECT_PLAN, WALLET, GETUPI, PAYMENT_CONFIRMATION, USERDETAILS, FINAL = range(10)
 
 # Owner's UPI ID for validation
 OWNER_UPI_ID = "kspgpraveen157@ybl"
@@ -118,86 +115,43 @@ async def choose_crypto(update: Update, context: CallbackContext) -> int:
     )
     return SELECT_PLAN
 
-# Step 6: Choose Plan or Enter Amount (for USDT)
-
+# Step 6: Choose Plan or Enter Amount
 async def choose_plan(update: Update, context: CallbackContext) -> int:
     text = update.message.text
 
     if context.user_data['crypto'] == "USDT":
-        # USDT plans mapping
         usdt_plans = {
-            "1": 92,  # Numeric value only
-            "2": 184,
-            "3": 276,
-            "4": 368,
-            "5": 458,
-            "8": None  # For custom amounts
+            "1": 92, "2": 184, "3": 276, "4": 368, "5": 458, "8": None
         }
-
-        if text in usdt_plans and text != "8":  # If the user selects a predefined USDT plan
-            context.user_data['amount'] = usdt_plans[text]
-            logger.info(f"USDT Plan selected: {usdt_plans[text]}₹")
-            await update.message.reply_text(f"Plan selected: {usdt_plans[text]}₹\nNow, enter your wallet address:")
-            return WALLET
-
-        elif text == "8":  # If the user selects "Others" for USDT
-            await update.message.reply_text("Enter your amount in dollars (Minimum 5 USD):")
-            return SELECT_PLAN  # Stay in this state to accept the custom input
-
-        else:
-            logger.warning(f"Invalid plan selection for USDT: {text}")
-            await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
-            return SELECT_PLAN
-
+        plans = usdt_plans
     else:
-        # Handle non-USDT plans (same as before)
         plans = {
-            "1": 55,  # Numeric value only
-            "2": 97,
-            "3": 194,
-            "4": 291,
-            "5": 388,
-            "6": 485,
-            "7": 680,
-            "8": None  # For custom amounts
+            "1": 55, "2": 97, "3": 194, "4": 291, "5": 388, "6": 485, "7": 680, "8": None
         }
 
-        if text in plans and text != "8":  # If the user selects a predefined plan
-            context.user_data['amount'] = plans[text]
-            logger.info(f"Plan selected: {plans[text]}₹")
-            await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
-            return WALLET
-
-        elif text == "8":  # Custom amount
-            await update.message.reply_text("Enter your amount in dollars:")
-            return SELECT_PLAN  # Stay in this state to accept the custom input
-
-        else:
-            logger.warning(f"Invalid plan selection: {text}")
-            await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
-            return SELECT_PLAN
-
-# Step 6.1: Handle Custom Amount (only for USDT and plan 8)
-async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
-    if context.user_data.get('crypto') == "USDT" and context.user_data.get('amount') is None:  # Handle custom amount
-        amount = update.message.text
+    if text in plans and text != "8":
+        context.user_data['amount'] = plans[text]
+        await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
+        return WALLET
+    elif text == "8":
+        await update.message.reply_text("Enter your amount in dollars (Minimum 5 USD):")
+        return SELECT_PLAN
+    else:
         try:
-            amount = float(amount)
-            if amount >= 5:  # Ensure the amount is valid
+            amount = float(text)
+            if context.user_data.get('crypto') == "USDT" and context.user_data.get('amount') is None:
+                if amount >= 5:
                 context.user_data['amount'] = amount
-                logger.info(f"Custom amount selected: {amount} USD")
                 await update.message.reply_text(f"Custom amount selected: {amount} USD\nNow, enter your wallet address:")
                 return WALLET
             else:
                 await update.message.reply_text("Amount should be at least 5 USD. Please enter a valid amount.")
-                return SELECT_PLAN  # Stay in this state to accept the custom input
+                return SELECT_PLAN
+                
+            
         except ValueError:
-            await update.message.reply_text("Invalid amount. Please enter a numeric value.")
-            return SELECT_PLAN  # Stay in the plan selection step if the input is invalid
-    else:
-        # If the custom amount is not for USDT or plan 8, return to SELECT_PLAN
-        await update.message.reply_text("Invalid choice. Please choose a valid option or select a plan.")
-        return SELECT_PLAN
+            await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
+            return SELECT_PLAN
 
 # Step 7: Wallet Address
 async def wallet(update: Update, context: CallbackContext) -> int:
@@ -207,86 +161,84 @@ async def wallet(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("Please enter your UPI ID:")
     return GETUPI
 
-
 # Step 8: Get UPI ID
 async def get_upi(update: Update, context: CallbackContext) -> int:
     upi = update.message.text
     context.user_data['upi'] = upi
-    await update.message.reply_text("UPI ID Saved!!.. Enter your Transaction id: ")
+    await update.message.reply_text("UPI ID Saved! Enter your Transaction ID:")
     return PAYMENT_CONFIRMATION
-
 
 # Step 9: Payment Confirmation
 async def payment_confirmation(update: Update, context: CallbackContext) -> int:
-    transaction_id=update.message.text
+    transaction_id = update.message.text
     context.user_data['transaction_id'] = transaction_id
+    user_details = (
+        f"Name: {context.user_data['name']}\n"
+        f"WhatsApp: {context.user_data['whatsapp']}\n"
+        f"Gmail: {context.user_data['gmail']}\n"
+        f"Cryptocurrency: {context.user_data['crypto']}\n"
+        f"Plan: {context.user_data['amount']}\n"
+        f"Wallet Address: {context.user_data['wallet']}\n"
+        f"UPI ID: {context.user_data['upi']}\n"
+        f"Transaction ID: {context.user_data['transaction_id']}"
+    )
+    await update.message.reply_text(user_details)
+    await update.message.reply_text("Confirm your details (yes/no):")
     return USERDETAILS
 
-#user_details confirmation
-    
+# User details confirmation
 async def user_details(update: Update, context: CallbackContext) -> int:
-    # Send email with the details
-    user_details = f"Name: {context.user_data['name']}\n"
-    user_details += f"WhatsApp: {context.user_data['whatsapp']}\n"
-    user_details += f"Gmail: {context.user_data['gmail']}\n"
-    user_details += f"Cryptocurrency: {context.user_data['crypto']}\n"
-    user_details += f"Plan: {context.user_data['amount']}\n"
-    user_details += f"Wallet Address: {context.user_data['wallet']}\n"
-    user_details += f"UPI ID: {context.user_data['upi']}"
-    user_details += f"Transaction Id : {context.user_data['transaction_id']}"
-    await update.message.reply_text(user_details)
-    await update.message.reply_text("Confirm your details:yes/no")
-    confirm = update.message.text
-    if confirm == "yes" or "Yes" :
-        return FINAL
+    confirm = update.message.text.lower()
+    if confirm == "yes":
+        return await final(update, context)
     else:
-        await update.message.reply_text("please Restart The bot and regive the Details.")
-        
-#final function for send mail and end conversation
-async def final(update: Update, context: CallbackContext) -> int:    
+        await update.message.reply_text("Please restart the bot and re-enter your details.")
+        return ConversationHandler.END
+
+# Final function to send email and end conversation
+async def final(update: Update, context: CallbackContext) -> int:
+    user_details = (
+        f"Name: {context.user_data['name']}\n"
+        f"WhatsApp: {context.user_data['whatsapp']}\n"
+        f"Gmail: {context.user_data['gmail']}\n"
+        f"Cryptocurrency: {context.user_data['crypto']}\n"
+        f"Plan: {context.user_data['amount']}\n"
+        f"Wallet Address: {context.user_data['wallet']}\n"
+        f"UPI ID: {context.user_data['upi']}\n"
+        f"Transaction ID: {context.user_data['transaction_id']}"
+    )
     await send_email(user_details)
     await update.message.reply_text("Details submitted successfully!")
-    await update.message.reply_text("Any issues contact :@Praveenkumar157 . For more enqueries send mail to : fimcryptobot@gmail.com")
-    await update.message.reply_text("THANK YOU!!! , VISIT AGAIN...")
+    await update.message.reply_text("For any issues, contact: @Praveenkumar157. For more inquiries, send an email to: fimcryptobot@gmail.com")
+    await update.message.reply_text("THANK YOU! VISIT AGAIN...")
     return ConversationHandler.END
 
+def main() -> None:
+    # Your bot token from BotFather
+    BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
-    
-#conversation handler
-conversation_handler = ConversationHandler(
-    entry_points=[CommandHandler("start", start)],
-    states={
-        NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
-        WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
-        GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
-        CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
-        SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
-        WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
-        GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
-        PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
-        USERDETAILS: [MessageHandler(filters.TEXT & ~filters.COMMAND, user_details)],
-        FINAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, final)],
-        
-    },
-    fallbacks=[],
-)
+    application = Application.builder().token(BOT_TOKEN).build()
 
-# Your bot token from BotFather
-BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("start", start)],
+        states={
+            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
+            WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
+            GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
+            CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
+            SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
+            WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
+            GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
+            PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
+            USERDETAILS: [MessageHandler(filters.TEXT & ~filters.COMMAND, user_details)],
+        },
+        fallbacks=[],
+    )
 
-application = Application.builder().token(BOT_TOKEN).build()
-application.bot.set_webhook(url='https://fimbot.onrender.com/webhook')
-set_webhook_url = f"https://api.telegram.org/bot{bot_token}/setWebhook?url={webhook_url}"
-response = requests.get(set_webhook_url)
+    application.add_handler(conv_handler)
 
-if response.status_code == 200:
-    print("Webhook set successfully!")
-else:
-    print(f"Failed to set webhook: {response.text}")
-application.add_handler(conversation_handler)
-
-
-
-
-if __name__ == "__main__":
+    # Start the Bot
     application.run_polling()
+
+if __name__ == '__main__':
+    main()
