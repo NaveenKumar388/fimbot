@@ -17,6 +17,8 @@ from aiohttp import BasicAuth
 import os
 from aiohttp import web
 
+
+
 # Set up logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -253,17 +255,22 @@ async def final(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("THANK YOU! VISIT AGAIN...")
     return ConversationHandler.END
 
+
+
+
 async def handle_webhook(request):
-    update = await request.json()
+    update = Update.de_json(await request.json(), application.bot)
     await application.process_update(update)
     return web.Response()
 
-async def main() -> None:
-    # Your bot token from BotFather
+async def main():
     BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
     global application
     application = Application.builder().token(BOT_TOKEN).build()
+
+    # Initialize the application
+    await application.initialize()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -297,3 +304,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     web.run_app(asyncio.run(main()), host='0.0.0.0', port=port)
 
+# Add this line to start the application
+asyncio.run(application.run_polling())
