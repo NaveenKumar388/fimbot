@@ -115,6 +115,8 @@ async def choose_crypto(update: Update, context: CallbackContext) -> int:
     )
     return SELECT_PLAN
 
+# ... (previous code remains unchanged)
+
 # Step 6: Choose Plan or Enter Amount
 async def choose_plan(update: Update, context: CallbackContext) -> int:
     text = update.message.text
@@ -130,36 +132,45 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
         }
 
     if text in plans and text != "8":
-        context.user_data['amount'] = plans[text]
-        await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
-        return WALLET
-    elif text == "8":
+        if context.user_data['crypto'] == "USDT" and text in ["1", "2", "3", "4", "5"]:
+            context.user_data['amount'] = plans[text]
+            await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
+            return WALLET
+        elif context.user_data['crypto'] != "USDT" and text in ["1", "2", "3", "4", "5"]:
+            context.user_data['amount'] = plans[text]
+            await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
+            return WALLET
+    
+    if text == "8":
         if context.user_data['crypto'] == "USDT":
             await update.message.reply_text("Enter your amount in dollars (Minimum 5 USD):")
-            
-            return SELECT_PLAN
         else:
             await update.message.reply_text("Enter your amount in dollars:")
-            
-            return SELECT_PLAN
-    else:
-        try:
-            amount = float(text)
-            if context.user_data['crypto'] == "USDT":
-                context.user_data['amount'] = amount*92
-                if amount >= 5:
-                    await update.message.reply_text(f"Custom amount selected: {amount} USD\nNow, enter your wallet address:")
-                    return WALLET
-                else:
-                    await update.message.reply_text("For USDT, the amount should be at least 5 USD. Please enter a valid amount.")
-                    return SELECT_PLAN
-            else:
-                context.user_data['amount'] = amount * 97
-                await update.message.reply_text(f"Custom amount selected: {amount} ₹\nNow, enter your wallet address:")
+        return SELECT_PLAN
+
+    try:
+        amount = float(text)
+        if context.user_data['crypto'] == "USDT":
+            amount_inr = amount * 92
+            if amount >= 5:
+                context.user_data['amount'] = amount_inr
+                await update.message.reply_text(f"Custom amount selected: {amount} USD ({amount_inr:.2f}₹)\nNow, enter your wallet address:")
                 return WALLET
-        except ValueError:
-            await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
-            return SELECT_PLAN
+            else:
+                await update.message.reply_text("For USDT, the amount should be at least 5 USD. Please enter a valid amount.")
+                return SELECT_PLAN
+        else:
+            amount_inr = amount * 97
+            context.user_data['amount'] = amount_inr
+            await update.message.reply_text(f"Custom amount selected: {amount} USD ({amount_inr:.2f}₹)\nNow, enter your wallet address:")
+            return WALLET
+    except ValueError:
+        await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
+        return SELECT_PLAN
+
+# ... (rest of the code remains unchanged)
+
+
 
 # Step 7: Wallet Address
 async def wallet(update: Update, context: CallbackContext) -> int:
