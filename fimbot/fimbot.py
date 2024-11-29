@@ -5,8 +5,7 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
-    filters,
-    Dispatcher,
+    filters,  
     ConversationHandler,
     CallbackContext
 )
@@ -20,10 +19,10 @@ from telegram import Bot
 app = Flask(__name__)
 
 # Your bot token from BotFather
-TELEGRAM_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
+BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 WEBHOOK_URL = "https://t.me/Fim_Crypto_Exchange_Bot/webhook"  # Replace with your server's webhook URL
 
-
+application = Application.builder().token(BOT_TOKEN).build()
 
 # Set up logging
 logging.basicConfig(
@@ -274,25 +273,25 @@ conversation_handler = ConversationHandler(
     fallbacks=[],
 )
 
-dispatcher.add_handler(conversation_handler)
 
-# Telegram Bot and Dispatcher
-bot = Bot(TELEGRAM_TOKEN)
-dispatcher = Dispatcher(bot, update_queue=None)
+application.add_handler(conversation_handler)
 
 
-# Set webhook endpoint
+
+# Define Flask webhook route
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(), bot)
-    dispatcher.process_update(update)
-    return "ok", 200
+    # Process incoming Telegram update
+    json_data = request.get_json(force=True)
+    update = telegram.Update.de_json(json_data, application.bot)
+    application.process_update(update)
+    return "OK", 200
 
-# Set up webhook
+# Set webhook function
 def set_webhook():
-    bot.setWebhook(WEBHOOK_URL)
+    application.bot.set_webhook(WEBHOOK_URL)
 
-# Start Flask app
+# Run Flask app
 if __name__ == "__main__":
-    set_webhook()  # Set the webhook
-    app.run(host="0.0.0.0", port=443)  # Make sure to use an appropriate port (e.g., 443 for HTTPS)
+    set_webhook()
+    app.run(host="0.0.0.0", port=5000)
