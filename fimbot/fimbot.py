@@ -277,7 +277,7 @@ conversation_handler = ConversationHandler(
 dispatcher.add_handler(conversation_handler)
 
 # Telegram Bot and Dispatcher
-bot = Bot(7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw)
+bot = Bot(TELEGRAM_TOKEN)
 dispatcher = Dispatcher(bot, update_queue=None)
 
 
