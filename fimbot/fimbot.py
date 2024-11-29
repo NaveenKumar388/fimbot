@@ -211,7 +211,7 @@ async def get_upi(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Invalid UPI ID! Please enter the correct one.")
         return GETUPI
 
-    await update.message.reply_text("UPI ID saved! Please confirm the details:\n" +
+    await update.message.reply_text("UPI ID saved! Please confirm the details:yes/no\n" +
                                     f"Name: {context.user_data['name']}\n" +
                                     f"WhatsApp: {context.user_data['whatsapp']}\n" +
                                     f"Gmail: {context.user_data['gmail']}\n" +
