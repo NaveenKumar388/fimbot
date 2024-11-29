@@ -285,13 +285,16 @@ def home():
     return "FIM Crypto Exchange Bot is live!", 200
 
 # Webhook route
-@app.route("/webhook", methods=["POST"])
+@app.route('/webhook', methods=['POST'])
 def webhook():
     json_data = request.get_json(force=True)
-    logger.info(f"Webhook received data: {json_data}")
-    update = Update.de_json(json_data, application.bot)
-    asyncio.run(application.process_update(update))
+    logger.info(f"Incoming webhook data: {json_data}")
+    try:
+        asyncio.run(application.process_update(Update.de_json(json_data, application.bot)))
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
     return "OK", 200
+
 
 # Set webhook asynchronously
 def set_webhook():
