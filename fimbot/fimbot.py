@@ -246,6 +246,8 @@ def main() -> None:
     )
 
     application.add_handler(conversation_handler)
+    application.bot.set_webhook('https://t.me/Fim_Crypto_Exchange_Bot')
+
     application.run_polling()
 
 if __name__ == "__main__":
