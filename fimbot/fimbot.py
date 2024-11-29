@@ -10,10 +10,7 @@ from telegram.ext import (
     CallbackContext
 )
 import aiohttp
-
 from aiohttp import BasicAuth 
-
-
 
 # Set up logging
 logging.basicConfig(
@@ -41,7 +38,7 @@ async def send_email(details: str):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"https://api.mailgun.net/v3/{DOMAIN}/messages",
-                auth=BasicAuth("api", API_KEY),  # Use BasicAuth here
+                auth=BasicAuth("api", API_KEY),
                 data={
                     "from": f"FIM Bot <{sender_email}>",
                     "to": [recipient_email],
@@ -52,7 +49,8 @@ async def send_email(details: str):
                 if response.status == 200:
                     logger.info("Email sent successfully.")
                 else:
-                    logger.error(f"Failed to send email. Status code: {response.status}")
+                    response_text = await response.text()
+                    logger.error(f"Failed to send email. Status code: {response.status}, Error: {response_text}")
     except Exception as e:
         logger.error(f"Error occurred while sending email: {e}")
 
@@ -60,7 +58,6 @@ async def send_email(details: str):
 async def start(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("Welcome to FIM CRYPTO EXCHANGE! Please provide your name (letters only):")
     return NAME
-
 
 # Step 2: Validate Name
 async def validate_name(update: Update, context: CallbackContext) -> int:
@@ -73,7 +70,6 @@ async def validate_name(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Invalid name. Please enter only letters.")
         return NAME
 
-
 # Step 3: Validate WhatsApp Number
 async def validate_whatsapp(update: Update, context: CallbackContext) -> int:
     whatsapp = update.message.text
@@ -84,7 +80,6 @@ async def validate_whatsapp(update: Update, context: CallbackContext) -> int:
     else:
         await update.message.reply_text("Invalid WhatsApp number. Enter a 10-digit number.")
         return WHATSAPP
-
 
 # Step 4: Validate Gmail
 async def validate_gmail(update: Update, context: CallbackContext) -> int:
@@ -103,7 +98,6 @@ async def validate_gmail(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Invalid Gmail. Enter a valid Gmail address.")
         return GMAIL
 
-
 # Step 5: Choose Cryptocurrency
 async def choose_crypto(update: Update, context: CallbackContext) -> int:
     context.user_data['crypto'] = update.message.text
@@ -121,8 +115,7 @@ async def choose_crypto(update: Update, context: CallbackContext) -> int:
     )
     return SELECT_PLAN
 
-
-#Step 6: Choose Plan or Enter Amount (for USDT)
+# Step 6: Choose Plan or Enter Amount (for USDT)
 async def choose_plan(update: Update, context: CallbackContext) -> int:
     text = update.message.text
 
@@ -178,14 +171,11 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
             await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
             return SELECT_PLAN
 
-
 # Step 6.1: Handle Custom Amount (only for USDT and plan 8)
 async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
-    # Ensure this only runs if the selected crypto is USDT and the plan is 8
     if context.user_data.get('crypto') == "USDT" and context.user_data.get('amount') == "8":
         amount = update.message.text
         try:
-            # Check if the input is a valid number and greater than or equal to 5
             amount = float(amount)
             if amount >= 5:
                 context.user_data['amount'] = f"{amount} USD"
@@ -199,12 +189,8 @@ async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
             await update.message.reply_text("Invalid amount. Please enter a numeric value.")
             return SELECT_PLAN
     else:
-        # If it's not USDT or plan 8, just proceed to the next step without handling custom amount
         await update.message.reply_text("Please select a valid plan or try again.")
         return SELECT_PLAN
-
-        
-
 
 # Step 7: Wallet Address
 async def wallet(update: Update, context: CallbackContext) -> int:
@@ -213,76 +199,71 @@ async def wallet(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("Wallet address saved! Please enter your UPI ID:")
     return GETUPI
 
-
 # Step 8: Get UPI ID
 async def get_upi(update: Update, context: CallbackContext) -> int:
     upi_id = update.message.text
     context.user_data['upi_id'] = upi_id
-    await update.message.reply_text("UPI ID saved! Please enter your transaction ID:")
+
+    # UPI ID validation
+    if upi_id != OWNER_UPI_ID:
+        await update.message.reply_text("Invalid UPI ID! Please enter the correct one.")
+        return GETUPI
+
+    await update.message.reply_text("UPI ID saved! Please confirm the details:\n" +
+                                    f"Name: {context.user_data['name']}\n" +
+                                    f"WhatsApp: {context.user_data['whatsapp']}\n" +
+                                    f"Gmail: {context.user_data['gmail']}\n" +
+                                    f"Crypto: {context.user_data['crypto']}\n" +
+                                    f"Amount: {context.user_data['amount']}\n" +
+                                    f"Wallet: {context.user_data['wallet']}\n" +
+                                    f"UPI ID: {context.user_data['upi_id']}\n\n" +
+                                    "Is everything correct? (yes/no)")
+
     return PAYMENT_CONFIRMATION
 
-
-# Step 9: Payment Confirmation
+# Step 9: Confirm Payment
 async def payment_confirmation(update: Update, context: CallbackContext) -> int:
-    transaction_id = update.message.text
-    context.user_data['transaction_id'] = transaction_id
-
-    details = (
-        f"Name: {context.user_data['name']}\n"
-        f"WhatsApp: {context.user_data['whatsapp']}\n"
-        f"Gmail: {context.user_data['gmail']}\n"
-        f"Crypto: {context.user_data['crypto']}\n"
-        f"Amount: {context.user_data['amount']}\n"
-        f"Wallet: {context.user_data['wallet']}\n"
-        f"UPI ID: {context.user_data['upi_id']}\n"
-        f"Transaction ID: {transaction_id}\n"
-    )
-
-    try:
+    confirmation = update.message.text.lower()
+    if confirmation == 'yes':
+        # Send email with details
+        details = "\n".join([f"{key}: {value}" for key, value in context.user_data.items()])
         await send_email(details)
+
         await update.message.reply_text(
             "Details submitted successfully! Please kindly wait. We will send crypto within 1 hour and inform you via email!"
         )
-        await update.message.reply_text(
-            "Any issues - Contact: @Praveenkumar157 ")
-        await update.message.reply_text("For more inquiries,send mail to: fimcryptobot@gmail.com \n THANK YOU! VISIT AGAIN!"       )
-        return ConversationHandler.END
-    except Exception as e:
-        await update.message.reply_text("An error occurred while processing your request. Please try again later.")
-        logger.error(f"Error in payment_confirmation: {e}")
         return ConversationHandler.END
 
+    else:
+        await update.message.reply_text("Operation canceled. You can restart anytime with /start.")
+        return ConversationHandler.END
 
-# Cancel command
+# Step 10: Handle cancel command
 async def cancel(update: Update, context: CallbackContext) -> int:
-    await update.message.reply_text("Operation canceled. You can restart with /start.")
+    await update.message.reply_text("Operation canceled. You can restart anytime with /start.")
     return ConversationHandler.END
 
-
 # Main function
-def main():
-    application = Application.builder().token('7556988669:AAEAswtPq7xG4Z5zhB78_FBgmqKDRKvg990').build()
+def main() -> None:
+    application = Application.builder().token("7556988669:AAEAswtPq7xG4Z5zhB78_FBgmqKDRKvg990").build()
 
     conversation_handler = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
-    states={
-        NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
-        WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
-        GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
-        CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
-        SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
-        WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
-        GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
-        PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
-    },
-    fallbacks=[CommandHandler('cancel', cancel)],
-   )
-  
+        entry_points=[CommandHandler('start', start)],
+        states={
+            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
+            WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
+            GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
+            CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
+            SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
+            WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
+            GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
+            PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
+        },
+        fallbacks=[CommandHandler('cancel', cancel)],
+    )
 
     application.add_handler(conversation_handler)
     application.run_polling()
 
-
 if __name__ == '__main__':
     main()
-
