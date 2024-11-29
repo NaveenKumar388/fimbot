@@ -11,6 +11,10 @@ from telegram.ext import (
 )
 import aiohttp
 
+from aiohttp import BasicAuth 
+
+
+
 # Set up logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -37,7 +41,7 @@ async def send_email(details: str):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"https://api.mailgun.net/v3/{DOMAIN}/messages",
-                auth=("api", API_KEY),
+                auth=BasicAuth("api", API_KEY),  # Use BasicAuth here
                 data={
                     "from": f"FIM Bot <{sender_email}>",
                     "to": [recipient_email],
@@ -51,7 +55,6 @@ async def send_email(details: str):
                     logger.error(f"Failed to send email. Status code: {response.status}")
     except Exception as e:
         logger.error(f"Error occurred while sending email: {e}")
-
 
 # Step 1: Start command
 async def start(update: Update, context: CallbackContext) -> int:
