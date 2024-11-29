@@ -279,12 +279,14 @@ conversation_handler = ConversationHandler(
 
 application.add_handler(conversation_handler)
 
+# Define root route for health check
+@app.route("/", methods=["GET"])
+def home():
+    return "FIM Crypto Exchange Bot is live!", 200
 
-
-# Define Flask webhook route
+# Webhook route
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    # Process incoming Telegram update
     json_data = request.get_json(force=True)
     update = telegram.Update.de_json(json_data, application.bot)
     application.process_update(update)
