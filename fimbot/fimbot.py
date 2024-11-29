@@ -288,8 +288,9 @@ def home():
 @app.route("/webhook", methods=["POST"])
 def webhook():
     json_data = request.get_json(force=True)
-    update = telegram.Update.de_json(json_data, application.bot)
-    application.process_update(update)
+    logger.info(f"Webhook received data: {json_data}")
+    update = Update.de_json(json_data, application.bot)
+    asyncio.run(application.process_update(update))
     return "OK", 200
 
 # Set webhook asynchronously
