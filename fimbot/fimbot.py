@@ -275,7 +275,7 @@ conversation_handler = ConversationHandler(
 BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
 application = Application.builder().token(BOT_TOKEN).build()
-bot.set_webhook(url='https://https://fimbot.onrender.com/your-webhook-path')
+application.bot.set_webhook(url='https://fimbot.onrender.com/webhook')
 set_webhook_url = f"https://api.telegram.org/bot{bot_token}/setWebhook?url={webhook_url}"
 response = requests.get(set_webhook_url)
 
