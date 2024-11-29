@@ -134,22 +134,27 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text(f"Plan selected: {plans[text]}₹\nNow, enter your wallet address:")
         return WALLET
     elif text == "8":
-        await update.message.reply_text("Enter your amount in dollars (Minimum 5 USD):")
-        return SELECT_PLAN
+        if context.user_data['crypto'] == "USDT":
+            await update.message.reply_text("Enter your amount in dollars (Minimum 5 USD):")
+            return SELECT_PLAN
+        else:
+            await update.message.reply_text("Enter your amount in rupees:")
+            return SELECT_PLAN
     else:
         try:
             amount = float(text)
-            if context.user_data.get('crypto') == "USDT" and context.user_data.get('amount') is None:
+            if context.user_data['crypto'] == "USDT":
                 if amount >= 5:
                     context.user_data['amount'] = amount
                     await update.message.reply_text(f"Custom amount selected: {amount} USD\nNow, enter your wallet address:")
                     return WALLET
                 else:
-                    await update.message.reply_text("Amount should be at least 5 USD. Please enter a valid amount.")
+                    await update.message.reply_text("For USDT, the amount should be at least 5 USD. Please enter a valid amount.")
                     return SELECT_PLAN
-                
-                
-            
+            else:
+                context.user_data['amount'] = amount
+                await update.message.reply_text(f"Custom amount selected: {amount} ₹\nNow, enter your wallet address:")
+                return WALLET
         except ValueError:
             await update.message.reply_text("Invalid choice. Please choose a valid option (1-7 or 8 for Others).")
             return SELECT_PLAN
@@ -243,3 +248,4 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+
