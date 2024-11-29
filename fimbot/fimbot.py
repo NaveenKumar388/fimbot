@@ -17,12 +17,11 @@ from telegram import Bot
 
 
 
-# Flask web server to handle webhook
-app = Flask(__name__)
+)
 
 # Your bot token from BotFather
 BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
-WEBHOOK_URL = "https://api.telegram.org/bot7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw/setWebhook"  # Replace with your server's webhook URL
+
 
 application = Application.builder().token(BOT_TOKEN).build()
 
@@ -283,28 +282,7 @@ conversation_handler = ConversationHandler(
 
 application.add_handler(conversation_handler)
 
-# Define root route for health check
-@app.route("/", methods=["GET"])
-def home():
-    return "FIM Crypto Exchange Bot is live!", 200
-
-# Webhook route
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    json_data = request.get_json(force=True)
-    logger.info(f"Incoming webhook data: {json_data}")
-    try:
-        asyncio.run(application.process_update(Update.de_json(json_data, application.bot)))
-    except Exception as e:
-        logger.error(f"Error processing webhook: {str(e)}")
-    return "OK", 200
 
 
-# Set webhook asynchronously
-def set_webhook():
-    asyncio.run(application.bot.set_webhook(WEBHOOK_URL))
-
-# Run Flask app
 if __name__ == "__main__":
-    set_webhook()
-    app.run(host="0.0.0.0", port=5000)
+    application.run_polling()
