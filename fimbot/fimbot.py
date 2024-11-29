@@ -283,17 +283,16 @@ async def main() -> None:
     application.add_handler(conv_handler)
 
     # Set up webhook
-    webhook_url = 'https://fimbot.onrender.com'  # Replace with your Render app URL
+    webhook_url = 'https://fimbot.onrender.com'  # Replace with your actual Render app URL
     await application.bot.set_webhook(url=f"{webhook_url}/webhook")
 
     # Set up web server
     app = web.Application()
     app.router.add_post('/webhook', handle_webhook)
 
-    # Start the web server
-    port = int(os.environ.get('PORT', 8080))
-    web.run_app(app, host='0.0.0.0', port=port)
+    return app
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    port = int(os.environ.get('PORT', 8080))
+    web.run_app(asyncio.run(main()), host='0.0.0.0', port=port)
+
