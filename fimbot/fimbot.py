@@ -13,6 +13,9 @@ import aiohttp
 from aiohttp import BasicAuth
 from flask import Flask, request
 from telegram import Bot
+import asyncio
+
+
 
 
 # Flask web server to handle webhook
@@ -287,9 +290,9 @@ def webhook():
     application.process_update(update)
     return "OK", 200
 
-# Set webhook function
+# Set webhook asynchronously
 def set_webhook():
-    application.bot.set_webhook(WEBHOOK_URL)
+    asyncio.run(application.bot.set_webhook(WEBHOOK_URL))
 
 # Run Flask app
 if __name__ == "__main__":
