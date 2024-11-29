@@ -246,7 +246,7 @@ async def user_details(update: Update, context: CallbackContext) -> int:
     user_details += f"Transaction Id : {context.user_data['transaction_id']}"
     await update.message.reply_text("Confirm your details:yes/no")
     confirm = update.message.text
-    if confirm is "yes" or "Yes" :
+    if confirm == "yes" or "Yes" :
         await update.message.reply_text(user_details)
     else:
         await update.message.reply_text("please Restart The bot and regive the Details.")
