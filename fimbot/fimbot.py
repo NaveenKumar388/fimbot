@@ -197,26 +197,24 @@ async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
 async def wallet(update: Update, context: CallbackContext) -> int:
     wallet = update.message.text
     context.user_data['wallet'] = wallet
-    await update.message.reply_text("Wallet address saved! Please enter your UPI ID:")
+    await update.message.reply_text(f"Wallet address saved! Proceed to payment: Pay {context.user_data['amount']} to UPI ID: {OWNER_UPI_ID}.")
+    await update.message.reply_text("Please enter your UPI ID:")
     return GETUPI
+
 
 # Step 8: Get UPI ID
 async def get_upi(update: Update, context: CallbackContext) -> int:
-    upi = update.message.text
-    context.user_data['upi'] = upi
-
-    if upi == OWNER_UPI_ID:
-        logger.info("UPI validated successfully")
-        await update.message.reply_text("UPI ID validated! Please confirm your payment by sending the amount you chose.")
-        return PAYMENT_CONFIRMATION
-    else:
-        await update.message.reply_text("Invalid UPI ID. Please enter your UPI ID again.")
-        return GETUPI
+    upi_id = update.message.text
+    context.user_data['upi_id'] = upi_id
+    await update.message.reply_text("UPI ID saved! Please enter your transaction ID:")
+    return PAYMENT_CONFIRMATION
 
 # Step 9: Payment Confirmation
 async def payment_confirmation(update: Update, context: CallbackContext) -> int:
+    transaction_id = update.message.text
+    context.user_data['transaction_id'] = transaction_id
     # Log transaction details and send an email
-    details = f"Transaction Details:\nName: {context.user_data['name']}\nWhatsApp: {context.user_data['whatsapp']}\nGmail: {context.user_data['gmail']}\nCrypto: {context.user_data['crypto']}\nAmount: {context.user_data['amount']}\nWallet: {context.user_data['wallet']}\nUPI: {context.user_data['upi']}"
+    details = f"Transaction Details:\nName: {context.user_data['name']}\nWhatsApp: {context.user_data['whatsapp']}\nGmail: {context.user_data['gmail']}\nCrypto: {context.user_data['crypto']}\nAmount: {context.user_data['amount']}\nWallet: {context.user_data['wallet']}\nUPI: {context.user_data['upi_id']}"
     logger.info(details)
     await send_email(details)  # Send email with the transaction details
     await update.message.reply_text("Payment confirmed! Thank you for using FIM Crypto Exchange.")
