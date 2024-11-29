@@ -1,4 +1,4 @@
-import logging
+import logging 
 import re
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
@@ -10,7 +10,7 @@ from telegram.ext import (
     CallbackContext
 )
 import aiohttp
-from aiohttp import BasicAuth 
+from aiohttp import BasicAuth
 
 # Set up logging
 logging.basicConfig(
@@ -193,7 +193,6 @@ async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Invalid choice. Please choose a valid option or select a plan.")
         return SELECT_PLAN
 
-
 # Step 7: Wallet Address
 async def wallet(update: Update, context: CallbackContext) -> int:
     wallet = update.message.text
@@ -203,54 +202,38 @@ async def wallet(update: Update, context: CallbackContext) -> int:
 
 # Step 8: Get UPI ID
 async def get_upi(update: Update, context: CallbackContext) -> int:
-    upi_id = update.message.text
-    context.user_data['upi_id'] = upi_id
+    upi = update.message.text
+    context.user_data['upi'] = upi
 
-    # UPI ID validation
-    if upi_id != OWNER_UPI_ID:
-        await update.message.reply_text("Invalid UPI ID! Please enter the correct one.")
+    if upi == OWNER_UPI_ID:
+        logger.info("UPI validated successfully")
+        await update.message.reply_text("UPI ID validated! Please confirm your payment by sending the amount you chose.")
+        return PAYMENT_CONFIRMATION
+    else:
+        await update.message.reply_text("Invalid UPI ID. Please enter your UPI ID again.")
         return GETUPI
 
-    await update.message.reply_text("UPI ID saved! Please confirm the details:yes/no\n" +
-                                    f"Name: {context.user_data['name']}\n" +
-                                    f"WhatsApp: {context.user_data['whatsapp']}\n" +
-                                    f"Gmail: {context.user_data['gmail']}\n" +
-                                    f"Crypto: {context.user_data['crypto']}\n" +
-                                    f"Amount: {context.user_data['amount']}\n" +
-                                    f"Wallet: {context.user_data['wallet']}\n" +
-                                    f"UPI ID: {context.user_data['upi_id']}\n\n" +
-                                    "Is everything correct? (yes/no)")
-
-    return PAYMENT_CONFIRMATION
-
-# Step 9: Confirm Payment
+# Step 9: Payment Confirmation
 async def payment_confirmation(update: Update, context: CallbackContext) -> int:
-    confirmation = update.message.text.lower()
-    if confirmation == 'yes':
-        # Send email with details
-        details = "\n".join([f"{key}: {value}" for key, value in context.user_data.items()])
-        await send_email(details)
-
-        await update.message.reply_text(
-            "Details submitted successfully! Please kindly wait. We will send crypto within 1 hour and inform you via email!"
-        )
-        return ConversationHandler.END
-
-    else:
-        await update.message.reply_text("Operation canceled. You can restart anytime with /start.")
-        return ConversationHandler.END
-
-# Step 10: Handle cancel command
-async def cancel(update: Update, context: CallbackContext) -> int:
-    await update.message.reply_text("Operation canceled. You can restart anytime with /start.")
+    # Log transaction details and send an email
+    details = f"Transaction Details:\nName: {context.user_data['name']}\nWhatsApp: {context.user_data['whatsapp']}\nGmail: {context.user_data['gmail']}\nCrypto: {context.user_data['crypto']}\nAmount: {context.user_data['amount']}\nWallet: {context.user_data['wallet']}\nUPI: {context.user_data['upi']}"
+    logger.info(details)
+    await send_email(details)  # Send email with the transaction details
+    await update.message.reply_text("Payment confirmed! Thank you for using FIM Crypto Exchange.")
     return ConversationHandler.END
 
-# Main function
+# Error handling
+async def cancel(update: Update, context: CallbackContext) -> int:
+    await update.message.reply_text("The process was canceled.")
+    return ConversationHandler.END
+
+# Main function to handle conversation and run the bot
 def main() -> None:
     application = Application.builder().token("7556988669:AAEobugM0V0qrBsowBerIorHShkHx3SCv8Y").build()
 
+    # Set up conversation handler
     conversation_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
+        entry_points=[CommandHandler("start", start)],
         states={
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
             WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
@@ -261,11 +244,11 @@ def main() -> None:
             GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
             PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
         },
-        fallbacks=[CommandHandler('cancel', cancel)],
+        fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     application.add_handler(conversation_handler)
     application.run_polling()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
