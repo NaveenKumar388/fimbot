@@ -177,20 +177,22 @@ async def handle_custom_amount(update: Update, context: CallbackContext) -> int:
         amount = update.message.text
         try:
             amount = float(amount)
-            if amount >= 5:
+            if amount >= 5:  # Ensure the amount is valid
                 context.user_data['amount'] = f"{amount} USD"
                 logger.info(f"Custom amount selected: {amount} USD")
                 await update.message.reply_text(f"Custom amount selected: {amount} USD\nNow, enter your wallet address:")
                 return WALLET
             else:
                 await update.message.reply_text("Amount should be at least 5 USD. Please enter a valid amount.")
-                return SELECT_PLAN
+                return SELECT_PLAN  # Stay in this state to accept the custom input
         except ValueError:
             await update.message.reply_text("Invalid amount. Please enter a numeric value.")
-            return SELECT_PLAN
+            return SELECT_PLAN  # Stay in the plan selection step if the input is invalid
     else:
-        await update.message.reply_text("Please select a valid plan or try again.")
+        # If the custom amount is not for USDT or plan 8, return to SELECT_PLAN
+        await update.message.reply_text("Invalid choice. Please choose a valid option or select a plan.")
         return SELECT_PLAN
+
 
 # Step 7: Wallet Address
 async def wallet(update: Update, context: CallbackContext) -> int:
