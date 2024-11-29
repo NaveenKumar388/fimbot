@@ -11,9 +11,8 @@ from telegram.ext import (
 )
 import aiohttp
 from aiohttp import BasicAuth
-from flask import Flask, request
 from telegram import Bot
-import asyncio
+
 
 
 
@@ -35,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Define states
-NAME, WHATSAPP, GMAIL, CHOOSE_CRYPTO, SELECT_PLAN, WALLET, GETUPI, PAYMENT_CONFIRMATION  , USERDETAILS =  range(9)
+NAME, WHATSAPP, GMAIL, CHOOSE_CRYPTO, SELECT_PLAN, WALLET, GETUPI, PAYMENT_CONFIRMATION  , USERDETAILS , FINAL =  range(10)
 
 # Owner's UPI ID for validation
 OWNER_UPI_ID = "kspgpraveen157@ybl"
@@ -246,13 +245,16 @@ async def user_details(update: Update, context: CallbackContext) -> int:
     user_details += f"Wallet Address: {context.user_data['wallet']}\n"
     user_details += f"UPI ID: {context.user_data['upi']}"
     user_details += f"Transaction Id : {context.user_data['transaction_id']}"
+    await update.message.reply_text(user_details)
     await update.message.reply_text("Confirm your details:yes/no")
     confirm = update.message.text
     if confirm == "yes" or "Yes" :
-        await update.message.reply_text(user_details)
+        return FINAL
     else:
         await update.message.reply_text("please Restart The bot and regive the Details.")
         
+#final function for send mail and end conversation
+async def final(update: Update, context: CallbackContext) -> int:    
     await send_email(user_details)
     await update.message.reply_text("Details submitted successfully!")
     await update.message.reply_text("Any issues contact :@Praveenkumar157 . For more enqueries send mail to : fimcryptobot@gmail.com")
@@ -270,8 +272,10 @@ conversation_handler = ConversationHandler(
         SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
         WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
         GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
-        USERDETAILS: [MessageHandler(filters.TEXT & ~filters.COMMAND, user_details)],
         PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
+        USERDETAILS: [MessageHandler(filters.TEXT & ~filters.COMMAND, user_details)],
+        FINAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, final)],
+        
     },
     fallbacks=[],
 )
