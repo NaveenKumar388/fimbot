@@ -15,10 +15,6 @@ from telegram import Bot
 
 
 
-
-
-)
-
 # Your bot token from BotFather
 BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
