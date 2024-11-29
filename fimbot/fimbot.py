@@ -271,9 +271,6 @@ conversation_handler = ConversationHandler(
     fallbacks=[],
 )
 
-
-application.add_handler(conversation_handler)
-
 # Your bot token from BotFather
 BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
@@ -286,6 +283,9 @@ if response.status_code == 200:
     print("Webhook set successfully!")
 else:
     print(f"Failed to set webhook: {response.text}")
+application.add_handler(conversation_handler)
+
+
 
 
 if __name__ == "__main__":
