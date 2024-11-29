@@ -32,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Define states
-NAME, WHATSAPP, GMAIL, CHOOSE_CRYPTO, SELECT_PLAN, WALLET, GETUPI, PAYMENT_CONFIRMATION = range(8) , USERDETAILS 
+NAME, WHATSAPP, GMAIL, CHOOSE_CRYPTO, SELECT_PLAN, WALLET, GETUPI, PAYMENT_CONFIRMATION  , USERDETAILS = = range(9)
 
 # Owner's UPI ID for validation
 OWNER_UPI_ID = "kspgpraveen157@ybl"
