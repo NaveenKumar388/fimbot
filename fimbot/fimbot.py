@@ -7,10 +7,14 @@ from telegram.ext import (
     MessageHandler,
     filters,
     ConversationHandler,
-    CallbackContext
+    CallbackContext,
+    ApplicationBuilder,
+    ContextTypes
 )
 import aiohttp
 from aiohttp import BasicAuth
+import os
+from aiohttp import web
 
 # Set up logging
 logging.basicConfig(
@@ -126,9 +130,6 @@ async def choose_crypto(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text(plan_description, reply_markup=ReplyKeyboardRemove())
     return SELECT_PLAN
 
-
-# ... (previous code remains unchanged)
-
 # Step 6: Choose Plan or Enter Amount
 async def choose_plan(update: Update, context: CallbackContext) -> int:
     text = update.message.text
@@ -171,7 +172,6 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Enter your amount in dollars:")
         return SELECT_PLAN
     
-
     try:
         amount = float(text)
         if context.user_data['crypto'] == "USDT":
@@ -252,10 +252,16 @@ async def final(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("THANK YOU! VISIT AGAIN...")
     return ConversationHandler.END
 
-def main() -> None:
+async def handle_webhook(request):
+    update = await request.json()
+    await application.process_update(update)
+    return web.Response()
+
+async def main() -> None:
     # Your bot token from BotFather
     BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
+    global application
     application = Application.builder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
@@ -276,9 +282,18 @@ def main() -> None:
 
     application.add_handler(conv_handler)
 
-    # Start the Bot
-    application.run_polling()
+    # Set up webhook
+    webhook_url = 'https://fimbot.onrender.com'  # Replace with your Render app URL
+    await application.bot.set_webhook(url=f"{webhook_url}/webhook")
+
+    # Set up web server
+    app = web.Application()
+    app.router.add_post('/webhook', handle_webhook)
+
+    # Start the web server
+    port = int(os.environ.get('PORT', 8080))
+    web.run_app(app, host='0.0.0.0', port=port)
 
 if __name__ == '__main__':
-    main()
-
+    import asyncio
+    asyncio.run(main())
