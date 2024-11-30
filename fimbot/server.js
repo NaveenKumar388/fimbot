@@ -5,8 +5,17 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const {
+  BOT_TOKEN,
+  OWNER_UPI_ID,
+  MAILGUN_API_KEY,
+  MAILGUN_DOMAIN,
+  RECIPIENT_EMAIL,
+  PORT
+} = process.env;
+
 const app = express();
-const port = process.env.PORT || 3000;
+const portNumber = PORT || 3000;
 
 app.use(bodyParser.json());
 
@@ -42,8 +51,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(portNumber, () => {
+  console.log(`Server running on port ${portNumber}`);
   startBot();
 });
 
