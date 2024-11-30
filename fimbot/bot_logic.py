@@ -11,7 +11,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import telegram
 import aiohttp
 from aiohttp.client import BasicAuth
-import CallbackContext
+
 
 # Flask app setup
 app = Flask(__name__)
