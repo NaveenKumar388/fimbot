@@ -244,18 +244,19 @@ async def main():
     global application
     application = setup_application()
     
-    # Set up webhook
+   # Set up webhook
+    BOT_TOKEN = os.environ.get("BOT_TOKEN")
     webhook_path = f"/webhook/{BOT_TOKEN}"
-    port = os.environ.get('PORT', '3000')
-    webhook_url = f"https://fimbot.onrender.com:{port}{webhook_path}"
+    webhook_url = f"https://fimbot.onrender.com{webhook_path}"  # Remove port from URL since 443 is default for HTTPS
     await application.bot.set_webhook(url=webhook_url)
     
     # Set up web application
     app = web.Application()
     app.router.add_post(webhook_path, webhook_handler)
     
-    return app
+    return application
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', '3000'))
-    web.run_app(main(), port=port)
+    web.run_app(main(), port=443)
+
+
