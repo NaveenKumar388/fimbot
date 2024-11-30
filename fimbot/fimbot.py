@@ -1,5 +1,6 @@
 import logging
 import re
+import os
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     Application,
@@ -8,16 +9,12 @@ from telegram.ext import (
     filters,
     ConversationHandler,
     CallbackContext,
-    ApplicationBuilder,
-    ContextTypes
 )
 import asyncio
 import aiohttp
-from aiohttp import BasicAuth
-import os
-from aiohttp import web
-
-
+from aiohttp import BasicAuth, web
+from aiohttp.web import Request, Response
+from concurrent.futures import ThreadPoolExecutor
 
 # Set up logging
 logging.basicConfig(
@@ -142,30 +139,10 @@ async def choose_plan(update: Update, context: CallbackContext) -> int:
             "1": 92, "2": 184, "3": 276, "4": 368, "5": 458, "8": None
         }
         plans = usdt_plans
-        plan_description = (
-            "Now, choose a plan by entering the number (1-8):\n"
-            "1. 1$ - 92₹\n"
-            "2. 2$ - 184₹\n"
-            "3. 3$ - 276₹\n"
-            "4. 4$ - 368₹\n"
-            "5. 5$ - 458₹\n"
-            "8. Others (Enter your amount in dollars):"
-        )
     else:
         plans = {
             "1": 55, "2": 97, "3": 194, "4": 291, "5": 388, "6": 485, "7": 680, "8": None
         }
-        plan_description = (
-            "Now, choose a plan by entering the number (1-8):\n"
-            "1. 0.5$ - 55₹\n"
-            "2. 1$ - 97₹\n"
-            "3. 2$ - 194₹\n"
-            "4. 3$ - 291₹\n"
-            "5. 4$ - 388₹\n"
-            "6. 5$ - 485₹\n"
-            "7. 7$ - 680₹\n"
-            "8. Others (Enter your amount in dollars):"
-        )
 
     if text in plans and text != "8":
         context.user_data['amount'] = plans[text]
@@ -255,22 +232,18 @@ async def final(update: Update, context: CallbackContext) -> int:
     await update.message.reply_text("THANK YOU! VISIT AGAIN...")
     return ConversationHandler.END
 
+async def handle_webhook(request: Request) -> Response:
+    try:
+        update = Update.de_json(await request.json(), application.bot)
+        await application.process_update(update)
+    except Exception as e:
+        logger.error(f"Error processing update: {e}")
+    return Response(status=200)
 
-
-
-async def handle_webhook(request):
-    update = Update.de_json(await request.json(), application.bot)
-    await application.process_update(update)
-    return web.Response()
-
-async def main():
+async def setup_application():
     BOT_TOKEN = "7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw"
 
-    global application
     application = Application.builder().token(BOT_TOKEN).build()
-
-    # Initialize the application
-    await application.initialize()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -294,6 +267,12 @@ async def main():
     webhook_url = 'https://fimbot.onrender.com'  # Replace with your actual Render app URL
     await application.bot.set_webhook(url=f"{webhook_url}/webhook")
 
+    return application
+
+async def main():
+    global application
+    application = await setup_application()
+
     # Set up web server
     app = web.Application()
     app.router.add_post('/webhook', handle_webhook)
@@ -302,7 +281,11 @@ async def main():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
-    web.run_app(asyncio.run(main()), host='0.0.0.0', port=port)
+    
+    # Use ThreadPoolExecutor to run the asyncio event loop
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        loop = asyncio.get_event_loop()
+        loop.set_default_executor(executor)
+        
+        web.run_app(loop.run_until_complete(main()), host='0.0.0.0', port=port)
 
-# Add this line to start the application
-asyncio.run(application.run_polling())
