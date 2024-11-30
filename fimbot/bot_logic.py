@@ -267,19 +267,29 @@ application = Application.builder().token(BOT_TOKEN).build()
 application.add_handler(conv_handler)
 
 
-# Define webhook handler
+# Webhook route for Telegram
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    """Handle incoming updates from Telegram."""
     json_str = request.get_data().decode('UTF-8')
     update = Update.de_json(json.loads(json_str), bot)
     application.process_update(update)
     return 'ok'
 
-# Set up webhook
 @app.before_first_request
 def setup_webhook():
-    webhook_url = f"https://{os.getenv('RENDER_URL')}/webhook"  # Replace with your Render URL
-    bot.set_webhook(url=webhook_url)
+    """Set the Telegram bot webhook when the application starts."""
+    webhook_url = f"https://{RENDER_URL}/webhook"  # Use the Render URL
+    try:
+        bot.set_webhook(url=webhook_url)
+        logger.info(f"Webhook successfully set to {webhook_url}")
+    except Exception as e:
+        logger.error(f"Failed to set webhook: {e}")
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
+
+()
+
+
+
