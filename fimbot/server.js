@@ -11,7 +11,7 @@ const {
 } = process.env;
 
 const app = express();
-const portNumber = PORT || 3000;
+const portNumber = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
@@ -47,7 +47,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-app.listen(portNumber, () => {
+app.listen(portNumber, '0.0.0.0', () => {
   console.log(`Server running on port ${portNumber}`);
   startBot();
 });
