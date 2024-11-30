@@ -11,7 +11,7 @@ const {
 } = process.env;
 
 const app = express();
-const portNumber = process.env.PORT || 3000;
+const portNumber = process.env.PORT || 8080;
 
 app.use(bodyParser.json());
 
@@ -34,14 +34,6 @@ function startBot() {
     setTimeout(startBot, 5000);
   });
 }
-
-app.post(`/webhook/${BOT_TOKEN}`, (req, res) => {
-  // Forward the webhook data to the Python bot
-  if (botProcess && botProcess.stdin.writable) {
-    botProcess.stdin.write(JSON.stringify(req.body) + '\n');
-  }
-  res.sendStatus(200);
-});
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
