@@ -1,3 +1,4 @@
+[V0_FILE]py:file="bot_logic.py"
 import os
 import re
 import logging
@@ -242,7 +243,8 @@ async def main():
     
     # Set up webhook
     webhook_path = f"/webhook/{BOT_TOKEN}"
-    webhook_url = f"https://fimbot.onrender.com{webhook_path}"
+    port = os.environ.get('PORT', '3000')
+    webhook_url = f"https://fimbot.onrender.com:{port}{webhook_path}"
     await application.bot.set_webhook(url=webhook_url)
     
     # Set up web application
@@ -252,5 +254,5 @@ async def main():
     return app
 
 if __name__ == '__main__':
-    web.run_app(main())
-
+    port = int(os.environ.get('PORT', '3000'))
+    web.run_app(main(), port=port)
