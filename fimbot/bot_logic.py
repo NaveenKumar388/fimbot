@@ -18,18 +18,17 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 OWNER_UPI_ID = os.getenv('OWNER_UPI_ID')
 MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
 MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
-SENDER_EMAIL = os.getenv('SENDER_EMAIL')
 RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL')
 
 # Async function to send email using Mailgun
-async def send_email(details: str):
+async def send_email(details: str, user_email: str):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 f"https://api.mailgun.net/v3/{MAILGUN_DOMAIN}/messages",
                 auth=BasicAuth("api", MAILGUN_API_KEY),
                 data={
-                    "from": f"FIM Bot <{SENDER_EMAIL}>",
+                    "from": f"FIM Bot <{user_email}>",
                     "to": [RECIPIENT_EMAIL],
                     "subject": "New Transaction Alert",
                     "text": details,
@@ -147,7 +146,7 @@ async def user_details(update: Update, context: CallbackContext) -> int:
 
 async def final(update: Update, context: CallbackContext) -> int:
     user_details = get_user_details(context.user_data)
-    await send_email(user_details)
+    await send_email(user_details, context.user_data['gmail'])
     await update.message.reply_text("Details submitted successfully!")
     await update.message.reply_text("For any issues, contact: @Praveenkumar157. For more inquiries, send an email to: fimcryptobot@gmail.com")
     await update.message.reply_text("THANK YOU! VISIT AGAIN...")
