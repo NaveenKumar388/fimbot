@@ -272,6 +272,9 @@ async def setup_application():
 async def main():
     global application
     application = await setup_application()
+    await application.initialize()  # Initialize the application
+    await application.start()  # Start the application
+    await application.updater.start_polling()  # Start polling for updates
 
     # Set up web server
     app = web.Application()
@@ -282,10 +285,6 @@ async def main():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
     
-    # Use ThreadPoolExecutor to run the asyncio event loop
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        loop = asyncio.get_event_loop()
-        loop.set_default_executor(executor)
-        
-        web.run_app(loop.run_until_complete(main()), host='0.0.0.0', port=port)
+    # Use asyncio.run() to properly manage the event loop
+    asyncio.run(web.run_app(main(), host='0.0.0.0', port=port))
 
