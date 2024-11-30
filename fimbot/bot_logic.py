@@ -7,10 +7,6 @@ import aiohttp
 from aiohttp import BasicAuth
 from aiohttp import web
 
-
-
-
-
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -206,9 +202,10 @@ def get_user_details(user_data):
         f"Transaction ID: {user_data['transaction_id']}"
     )
 
-# Set up the application
-def setup_application():
-    application = Application.builder().token(BOT_TOKEN).build()
+application = None
+
+async def setup_application():
+    app = Application.builder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -226,10 +223,9 @@ def setup_application():
         fallbacks=[],
     )
 
-    application.add_handler(conv_handler)
-    return application
+    app.add_handler(conv_handler)
+    return app
 
-# Webhook handler
 async def webhook_handler(request):
     try:
         update = Update.de_json(await request.json(), application.bot)
@@ -239,24 +235,21 @@ async def webhook_handler(request):
         logger.error(f"Error processing update: {e}")
         return web.Response(status=500)
 
-# Main function to set up the webhook
 async def main():
     global application
-    application = setup_application()
+    application = await setup_application()
     
-   # Set up webhook
-    BOT_TOKEN = os.environ.get("BOT_TOKEN")
+    # Set up webhook
     webhook_path = f"/webhook/{BOT_TOKEN}"
-    webhook_url = f"https://fimbot.onrender.com{webhook_path}"  # Remove port from URL since 443 is default for HTTPS
+    webhook_url = f"https://fimbot.onrender.com{webhook_path}"
     await application.bot.set_webhook(url=webhook_url)
     
     # Set up web application
     app = web.Application()
     app.router.add_post(webhook_path, webhook_handler)
     
-    return application
+    return app
 
 if __name__ == '__main__':
-    web.run_app(main(), port=443)
-
+    web.run_app(main())
 
