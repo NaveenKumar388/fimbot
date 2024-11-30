@@ -51,6 +51,25 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
+// Add this new route to set the webhook
+app.get('/setwebhook', async (req, res) => {
+  const webhookUrl = `https://${req.get('host')}/webhook`;
+  const setWebhookUrl = `https://api.telegram.org/bot${BOT_TOKEN}/setWebhook?url=${webhookUrl}`;
+  
+  try {
+    const response = await fetch(setWebhookUrl);
+    const data = await response.json();
+    if (data.ok) {
+      res.send('Webhook set successfully');
+    } else {
+      res.status(400).send('Failed to set webhook');
+    }
+  } catch (error) {
+    console.error('Error setting webhook:', error);
+    res.status(500).send('Error setting webhook');
+  }
+});
+
 app.listen(portNumber, () => {
   console.log(`Server running on port ${portNumber}`);
   startBot();
