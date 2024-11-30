@@ -1,53 +1,45 @@
-const express = require('express');
-const { spawn } = require('child_process');
-const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
-
+const express = require("express");
+const { spawn } = require("child_process");
+const bodyParser = require("body-parser");
+const dotenv = require("dotenv");
 dotenv.config();
 
-const {
-  BOT_TOKEN,
-  PORT
-} = process.env;
+const PORT = process.env.PORT || 8080;
 
 const app = express();
-const portNumber = process.env.PORT || 8080;
-
 app.use(bodyParser.json());
 
 let botProcess;
 
 function startBot() {
-  botProcess = spawn('python', ['bot_logic.py']);
+  botProcess = spawn("python", ["bot_logic.py"]);
 
-  botProcess.stdout.on('data', (data) => {
+  botProcess.stdout.on("data", (data) => {
     console.log(`Bot output: ${data}`);
   });
 
-  botProcess.stderr.on('data', (data) => {
+  botProcess.stderr.on("data", (data) => {
     console.error(`Bot error: ${data}`);
   });
 
-  botProcess.on('close', (code) => {
+  botProcess.on("close", (code) => {
     console.log(`Bot process exited with code ${code}`);
-    // Restart the bot if it crashes
-    setTimeout(startBot, 5000);
+    setTimeout(startBot, 5000); // Restart bot after a crash
   });
 }
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK" });
 });
 
-app.listen(portNumber, '0.0.0.0', () => {
-  console.log(`Server running on port ${portNumber}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
   startBot();
 });
 
-process.on('SIGTERM', () => {
+process.on("SIGTERM", () => {
   if (botProcess) {
     botProcess.kill();
   }
   process.exit(0);
 });
-
