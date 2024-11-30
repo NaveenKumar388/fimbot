@@ -1,4 +1,3 @@
-[V0_FILE]py:file="bot_logic.py"
 import os
 import re
 import logging
@@ -7,6 +6,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import aiohttp
 from aiohttp import BasicAuth
 from aiohttp import web
+
+
+
+
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
