@@ -248,8 +248,8 @@ async def main():
     app = web.Application()
     app.router.add_post(webhook_path, webhook_handler)
     
-    return app
+    return app  # Return the web.Application instance
 
 if __name__ == '__main__':
-    web.run_app(main())
+    web.run_app(main())  # Remove the port argument
 
