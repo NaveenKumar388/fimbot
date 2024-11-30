@@ -1,21 +1,23 @@
-# FIM Crypto Exchange Bot
+# FIM Crypto Exchange Telegram Bot
 
-This is a Telegram bot for cryptocurrency transactions and management, built using Python and the Telegram Bot API.
+This project implements a Telegram bot for FIM Crypto Exchange, allowing users to select cryptocurrency plans and process transactions.
 
 ## Features
-- Accepts user details like name, WhatsApp number, email, and wallet address.
-- Supports cryptocurrency selection and plan customization.
-- Sends transaction details via email using Mailgun.
-- Provides detailed feedback and logs for users.
+
+- User registration with name, WhatsApp number, and Gmail validation
+- Cryptocurrency selection
+- Plan selection or custom amount input
+- Wallet address collection
+- UPI payment processing
+- Email notification for new transactions
 
 ## Prerequisites
-- Python 3.9+
-- Telegram Bot Token (get it from [BotFather](https://core.telegram.org/bots#botfather))
-- Mailgun API credentials
-- Render account for deployment
+
+- Python 3.8+
+- Node.js 14+
+- npm
 
 ## Installation
+
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/<your-username>/<your-repo>.git
-   cd <your-repo>
+
