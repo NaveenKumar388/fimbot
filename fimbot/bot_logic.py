@@ -3,7 +3,7 @@ import logging
 import re
 import json
 from flask import Flask, request
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -11,8 +11,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import telegram
 import aiohttp
 from aiohttp.client import BasicAuth
-
-
+from concurrent.futures import ThreadPoolExecutor
 
 # Flask app setup
 app = Flask(__name__)
@@ -26,8 +25,8 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 bot = telegram.Bot(token=BOT_TOKEN)
 
 # Set up PostgreSQL connection using SQLAlchemy
-DATABASE_URL = os.getenv('DATABASE_URL')  # From Render environment variable
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv('DATABASE_URL')
+engine = create_engine(DATABASE_URL, pool_size=20, max_overflow=0)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
@@ -36,19 +35,20 @@ OWNER_UPI_ID = os.getenv('OWNER_UPI_ID')
 MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
 MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
 RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL')
+RENDER_URL = os.getenv('RENDER_EXTERNAL_URL')
 
 # Define a simple User model
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    whatsapp_number = Column(Integer)
+    whatsapp_number = Column(String)
     gmail = Column(String)
     crypto = Column(String)
-    amount = Column(Integer)
+    amount = Column(Float)
     wallet = Column(String)
     upi = Column(String)
-    transaction_id = Column(Integer)
+    transaction_id = Column(String)
 
 # Create the tables if not exist
 Base.metadata.create_all(engine)
@@ -119,7 +119,6 @@ async def validate_gmail(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Invalid Gmail. Enter a valid Gmail address.")
         return GMAIL
 
-
 async def choose_crypto(update: Update, context: CallbackContext) -> int:
     context.user_data['crypto'] = update.message.text
     plan_description = get_plan_description(context.user_data['crypto'])
@@ -181,6 +180,37 @@ async def user_details(update: Update, context: CallbackContext) -> int:
         await update.message.reply_text("Please restart the bot and re-enter your details.")
         return ConversationHandler.END
 
+async def final(update: Update, context: CallbackContext) -> int:
+    user_details = get_user_details(context.user_data)
+    await send_email(user_details, context.user_data['gmail'])
+    
+    # Save user data to PostgreSQL database
+    session = Session()
+    try:
+        user = User(
+            name=context.user_data['name'],
+            whatsapp_number=context.user_data['whatsapp'],
+            gmail=context.user_data['gmail'],
+            crypto=context.user_data['crypto'],
+            amount=float(context.user_data['amount']),
+            wallet=context.user_data['wallet'],
+            upi=context.user_data['upi'],
+            transaction_id=context.user_data['transaction_id']
+        )
+        session.add(user)
+        session.commit()
+        logger.info(f"User data saved to database: {user.id}")
+    except Exception as e:
+        logger.error(f"Error saving user data to database: {e}")
+        session.rollback()
+    finally:
+        session.close()
+
+    await update.message.reply_text(f"Thank you, {context.user_data['name']}! Your information has been saved.")
+    await update.message.reply_text("For any issues, contact: @Praveenkumar157. For more inquiries, send an email to: fimcryptobot@gmail.com")
+    await update.message.reply_text("THANK YOU! VISIT AGAIN...")
+    return ConversationHandler.END
+
 # Helper functions
 def get_plan_description(crypto):
     if crypto == "USDT":
@@ -230,44 +260,26 @@ def get_user_details(user_data):
         f"Transaction ID: {user_data['transaction_id']}"
     )
 
-    # Save user data to PostgreSQL database
-    session = Session()
-    user = User(name=context.user_data['name'], gmail=context.user_data['email'] , whatsapp=context.user_data['whatsapp'] , crypto = context.user_data['crypto'] , plan = context.user_data['amount'] , wallet = context.user_data['wallet'] , upi =context.user_data['upi'] , transaction_id = context.user_data['transaction_id']) 
-    session.add(user)
-    session.commit()
-    session.close()
-
-async def final(update: Update, context: CallbackContext) -> int:
-    user_details = get_user_details(context.user_data)
-    await send_email(user_details, context.user_data['gmail'])
-    await update.message.reply_text(f"Thank you, {context.user_data['name']}! Your information has been saved.")
-    await update.message.reply_text("For any issues, contact: @Praveenkumar157. For more inquiries, send an email to: fimcryptobot@gmail.com")
-    await update.message.reply_text("THANK YOU! VISIT AGAIN...")
-    return ConversationHandler.END
-
-async def setup_application():
-
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
-        states={
-            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
-            WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
-            GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
-            CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
-            SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
-            WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
-            GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
-            PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
-            USERDETAILS: [MessageHandler(filters.TEXT & ~filters.COMMAND, user_details)],
-        },
-        fallbacks=[],
-    )
-
-
-# Add handlers to the application
+# Set up the application
 application = Application.builder().token(BOT_TOKEN).build()
-application.add_handler(conv_handler)
 
+conv_handler = ConversationHandler(
+    entry_points=[CommandHandler("start", start)],
+    states={
+        NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_name)],
+        WHATSAPP: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_whatsapp)],
+        GMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, validate_gmail)],
+        CHOOSE_CRYPTO: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_crypto)],
+        SELECT_PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
+        WALLET: [MessageHandler(filters.TEXT & ~filters.COMMAND, wallet)],
+        GETUPI: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_upi)],
+        PAYMENT_CONFIRMATION: [MessageHandler(filters.TEXT & ~filters.COMMAND, payment_confirmation)],
+        USERDETAILS: [MessageHandler(filters.TEXT & ~filters.COMMAND, user_details)],
+    },
+    fallbacks=[],
+)
+
+application.add_handler(conv_handler)
 
 # Webhook route for Telegram
 @app.route('/webhook', methods=['POST'])
@@ -275,13 +287,17 @@ def webhook():
     """Handle incoming updates from Telegram."""
     json_str = request.get_data().decode('UTF-8')
     update = Update.de_json(json.loads(json_str), bot)
-    application.process_update(update)
+    
+    # Use ThreadPoolExecutor to handle updates asynchronously
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.submit(application.process_update, update)
+    
     return 'ok'
 
 @app.before_first_request
 def setup_webhook():
     """Set the Telegram bot webhook when the application starts."""
-    webhook_url = f"https://{RENDER_URL}/webhook"  # Use the Render URL
+    webhook_url = f"https://{RENDER_URL}/webhook"
     try:
         bot.set_webhook(url=webhook_url)
         logger.info(f"Webhook successfully set to {webhook_url}")
@@ -290,8 +306,4 @@ def setup_webhook():
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
-
-()
-
-
 
