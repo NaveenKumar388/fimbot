@@ -1,27 +1,27 @@
 services:
-  - type: web
-    name: fimbot
-    env: python
-    region: singapore
-    buildCommand: |
-      # Install system dependencies
-      apt-get update && apt-get install -y python3-venv
-      # Create and activate virtual environment
-      python -m venv /opt/venv
-      . /opt/venv/bin/activate
-      # Install Python dependencies
-      pip install --upgrade pip
-      pip install -r requirements.txt
-    startCommand: |
-      . /opt/venv/bin/activate
-      gunicorn bot_logic:app --workers 4 --threads 2 --timeout 120 --bind 0.0.0.0:$PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.8.0
-      - key: PYTHONPATH
-        value: /opt/venv/lib/python3.8/site-packages
-      - key: PATH
-        value: /opt/venv/bin:$PATH
-    healthCheckPath: /health
-    autoDeploy: true
+- type: web
+  name: fimbot
+  env: python
+  region: singapore
+  buildCommand: |
+    # Create and activate virtual environment without using tput
+    python -m venv /opt/venv
+    . /opt/venv/bin/activate
+    # Install Python dependencies
+    pip install --upgrade pip
+    pip install -r requirements.txt
+  startCommand: |
+    . /opt/venv/bin/activate
+    gunicorn bot_logic:app --workers 4 --threads 2 --timeout 120 --bind 0.0.0.0:$PORT
+  envVars:
+    - key: PYTHON_VERSION
+      value: 3.8.0
+    - key: PYTHONPATH
+      value: /opt/venv/lib/python3.8/site-packages
+    - key: PATH
+      value: /opt/venv/bin:$PATH
+    - key: TERM
+      value: xterm
+  healthCheckPath: /health
+  autoDeploy: true
 
