@@ -4,7 +4,9 @@ services:
   env: python
   region: singapore
   buildCommand: |
-    # Create and activate virtual environment without using tput
+    # Set up non-interactive environment
+    export DEBIAN_FRONTEND=noninteractive
+    # Create virtual environment without terminal commands
     python -m venv /opt/venv
     . /opt/venv/bin/activate
     # Install Python dependencies
@@ -21,7 +23,9 @@ services:
     - key: PATH
       value: /opt/venv/bin:$PATH
     - key: TERM
-      value: xterm
+      value: dumb
+    - key: DEBIAN_FRONTEND
+      value: noninteractive
   healthCheckPath: /health
   autoDeploy: true
 
