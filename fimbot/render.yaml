@@ -15,7 +15,7 @@ services:
     . /opt/venv/bin/activate
     gunicorn bot_logic:app --workers 4 --threads 2 --timeout 120 --bind 0.0.0.0:$PORT
   envVars:
-    - key: PYTHON_VERSION
+     - key: PYTHON_VERSION
       value: 3.10.2
     - key: PYTHONPATH
       value: /opt/venv/lib/python3.8/site-packages
@@ -23,6 +23,24 @@ services:
       value: /opt/venv/bin:/usr/local/bin:/usr/bin:$PATH
     - key: DEBIAN_FRONTEND
       value: noninteractive
-  healthCheckPath: /health
-  autoDeploy: true
+    - Key: BOT_TOKEN
+      value: 7225698093:AAFp1tuE6O0JRZpCglNuCVfeCgfYowdGxmw
+    - Key: DATABASE_URL
+      value: postgresql://fimbot_user:vTd8q0B3eLgbzYdohEsN7WHwObpC7maW@dpg-ct5ih3o8fa8c73buvkv0-a/fimbot
+    - Key: MAILGUN_API_KEY
+      value: c40b4cf176d8b7848047f78af43181d2-c02fd0ba-2d74e556
+    - Key: MAILGUN_DOMAIN
+      value: sandbox9e42961865ff435daea67c7af5b358eb.mailgun.org
+    - Key: OWNER_UPI_ID
+      value: kspgpraveen157@ybl
+    - Key: PORT
+      Value: 8080
+    - Key: RECIPIENT_EMAIL
+      Value: fimcryptobot@gmail.com
+    - Key: REDIS_URL
+      Value: redis://red-ct69dj5ds78s73bufqv0:6379
+    - Key: RENDER_URL
+      Value: https://fimbot.onrender.com
+healthCheckPath: /health
+autoDeploy: true
 
