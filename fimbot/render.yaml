@@ -16,7 +16,7 @@ services:
     gunicorn bot_logic:app --workers 4 --threads 2 --timeout 120 --bind 0.0.0.0:$PORT
   envVars:
     - key: PYTHON_VERSION
-      value: 3.8.0
+      value: 3.10.2
     - key: PYTHONPATH
       value: /opt/venv/lib/python3.8/site-packages
     - key: PATH
