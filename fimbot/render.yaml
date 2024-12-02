@@ -4,9 +4,10 @@ services:
   env: python
   region: singapore
   buildCommand: |
-    # Set up non-interactive environment
+    # Install ncurses and set up non-interactive environment
     export DEBIAN_FRONTEND=noninteractive
-    # Create virtual environment without terminal commands
+    apt-get update && apt-get install -y ncurses-bin
+    # Create virtual environment
     python -m venv /opt/venv
     . /opt/venv/bin/activate
     # Install Python dependencies
@@ -21,11 +22,13 @@ services:
     - key: PYTHONPATH
       value: /opt/venv/lib/python3.8/site-packages
     - key: PATH
-      value: /opt/venv/bin:$PATH
+      value: /opt/venv/bin:/usr/bin:$PATH
     - key: TERM
-      value: dumb
+      value: xterm-256color
     - key: DEBIAN_FRONTEND
       value: noninteractive
+    - key: NO_COLOR
+      value: "1"  # Disable color output if colors are causing issues
   healthCheckPath: /health
   autoDeploy: true
 
