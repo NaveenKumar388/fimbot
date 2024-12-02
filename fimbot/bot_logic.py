@@ -44,6 +44,7 @@ OWNER_UPI_ID = os.getenv('OWNER_UPI_ID')
 MAILGUN_API_KEY = os.getenv('MAILGUN_API_KEY')
 MAILGUN_DOMAIN = os.getenv('MAILGUN_DOMAIN')
 RECIPIENT_EMAIL = os.getenv('RECIPIENT_EMAIL')
+WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 
 # Define User model
 class User(Base):
@@ -291,7 +292,7 @@ def get_user_details(user_data):
         f"WhatsApp: {user_data[b'whatsapp'].decode('utf-8')}\n"
         f"Gmail: {user_data[b'gmail'].decode('utf-8')}\n"
         f"Cryptocurrency: {user_data[b'crypto'].decode('utf-8')}\n"
-        f"Plan: {user_data[b'amount'].decode('utf-8')}\n"
+        f"Plan: {user_data[b'amount'].decode('utf-8')}₹\n"
         f"Wallet Address: {user_data[b'wallet'].decode('utf-8')}\n"
         f"UPI ID: {user_data[b'upi'].decode('utf-8')}\n"
         f"Transaction ID: {user_data[b'transaction_id'].decode('utf-8')}"
@@ -339,13 +340,16 @@ def health_check():
 @app.before_first_request
 def setup_webhook():
     """Set the Telegram bot webhook when the application starts."""
-    webhook_url = f"https://{os.getenv('RENDER_EXTERNAL_URL')}/webhook"
-    try:
-        bot.set_webhook(url=webhook_url)
-        logger.info(f"Webhook successfully set to {webhook_url}")
-    except Exception as e:
-        logger.error(f"Failed to set webhook: {e}")
+    if WEBHOOK_URL:
+        try:
+            bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+            logger.info(f"Webhook successfully set to {WEBHOOK_URL}/webhook")
+        except Exception as e:
+            logger.error(f"Failed to set webhook: {e}")
+    else:
+        logger.warning("WEBHOOK_URL is not set. Webhook setup skipped.")
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
-</ReactProject>
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
+
